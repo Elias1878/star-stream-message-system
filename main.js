@@ -149,6 +149,7 @@ function handleScenarioCreation(input) {
             scenarioList.push(newScenarioData);
             console.log(scenarioList);
             resetInput();
+            return;
             break;
     }
     newIndirectMessage(questions[newScenarioQuestionnum]);
