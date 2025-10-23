@@ -88,8 +88,9 @@ function handleScenarioCreation(input) {
             if(!newScenarioData.month) {
                 newScenarioData.month = wordsToNumbers(input);
             }
-            if(newScenarioData.month >= 0 && newScenarioData.month <= 12
-            newScenarioQuestionnum += 1;
+            if(newScenarioData.month >= 0 && newScenarioData.month <= 12) {
+                newScenarioQuestionnum += 1;
+            }
             break;
         case 1:
             let dayNum = parseInt(input);
