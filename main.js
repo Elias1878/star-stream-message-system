@@ -2,9 +2,15 @@ const immediateMessageCenter = document.querySelector(".Immediate-Notifications"
 const commandInput = document.getElementById("command");
 
 function textToNumber(text) {
-    if(text.contains("one")) {
-        
+    let numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty one", "twenty two", "twenty three", "twenty four", "twenty five", "twenty six", "twenty seven", "twenty eight", "twenty nine", "thirty", "thirty one", "thirty two"];
+    let knownNumbers = [];
+    for(let i = 0; i < numbers.length; i++) {
+        if(text.includes(numbers[i]) {
+            knownNumbers.push(i);
+        }
     }
+    knownNumbers.sort((a, b) => b - a);
+    return knownNumbers[0];
 }
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -94,7 +100,7 @@ function handleScenarioCreation(input) {
         case 0:
             newScenarioData.month = parseInt(input);
             if(!newScenarioData.month) {
-                newScenarioData.month = wordsToNumbers(input);
+                newScenarioData.month = textToNumbers(input);
             }
             if(newScenarioData.month >= 0 && newScenarioData.month <= 12) {
                 newScenarioQuestionnum += 1;
@@ -103,7 +109,7 @@ function handleScenarioCreation(input) {
         case 1:
             let dayNum = parseInt(input);
             if(!dayNum) { // This means that it returned null, it's probably a word number
-                dayNum = wordsToNumbers(input);
+                dayNum = textToNumbers(input);
             }
             if(dayNum >= 1 && dayNum <= 31) {
                 newScenarioData.day = dayNum;
@@ -115,7 +121,7 @@ function handleScenarioCreation(input) {
         case 2:
             let hourNum = parseInt(input);
             if(!hourNum) {
-                hourNum = wordsToNumbers(input);
+                hourNum = textToNumbers(input);
             }
             if(hourNum >= 0 && hourNum <= 23) {
                 newScenarioData.hour = hourNum;
