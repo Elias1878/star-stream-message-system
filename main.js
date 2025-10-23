@@ -55,7 +55,7 @@ recognition.onresult = (e) => {
     } else if(speechState == "request") {
         processAndAnswer(transcript);
     } else if(speechState == "setNewScenario") {
-        speakMessage("This isn't implemented yet.");
+        handleScenarioCreation(transcript);
     } else if(speechState == "addtolibrary") {
         libraryAddHandler(transcript);
     }
@@ -75,6 +75,8 @@ function sendCommand() {
             }
         }
         newIndirectMessage("The Library of Knowledge has been closed.");
+    } else if(speechState == "setNewScenario") {
+        handleScenarioInformation(commandInput.value);
     }
     commandInput.value = "";
 }
