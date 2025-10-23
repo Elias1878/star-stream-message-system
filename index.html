@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Notification System</title>
+</head>
+<body>
+    <button id="startVoice" onclick="beginTextToSpeech()">Press to enable Voice Notifications.</button>
+    <button id="startRecog" onclick="beginSpeechRecognition()">Press to enable Speech Recognition</button>
+    <div class="commandinput">
+        <input id="command" type="text">
+        <button id="send-command" onclick="sendCommand()">Confirm Command</button>
+    </div>
+    <div class="Immediate-Notifications">
+        <!-- This is for the immediate messages, if messages pass a certain time, they get sent to the message log -->
+        <!-- The messages will be their own divs. -->
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
