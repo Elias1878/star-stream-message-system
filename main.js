@@ -56,6 +56,8 @@ recognition.onresult = (e) => {
         processAndAnswer(transcript);
     } else if(speechState == "setNewScenario") {
         speakMessage("This isn't implemented yet.");
+    } else if(speechState == "addtolibrary") {
+        libraryAddHandler(transcript);
     }
 };
 
