@@ -119,7 +119,7 @@ function handleScenarioCreation(input) {
             }
             break;
     }
-    speakMessage(questions[newScenarioQuestionnum]);
+    newIndirectMessage(questions[newScenarioQuestionnum]);
     console.log(newScenarioData);
 }
 
@@ -153,7 +153,7 @@ function processAndAnswer(command) {
             hour: null,
             scenarioName: null
         };
-        speakMessage("For what month?");
+        newIndirectMessage("For what month?");
         return;
     } else if(command.includes("open") && command.includes("library of knowledge")) {
         if(libraryOfKnowledge.length > 0) {
