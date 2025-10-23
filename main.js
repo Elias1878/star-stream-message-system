@@ -44,6 +44,18 @@ let timeSensing = {
     worldNow: null
 }
 
+function resetInput() {
+    speechState = "wakeword";
+    newScenarioData = {
+        month: null,
+        day: null,
+        hour: null,
+        scenarioName: null
+    }
+    newScenarioQuestionnum = 0;
+    newKnowledgeQuestion = 0;
+}
+
 function beginTextToSpeech() {
     let button = document.getElementById("startVoice");
     button.remove();
@@ -129,6 +141,14 @@ function handleScenarioCreation(input) {
             } else {
                 speakMessage("The hour must be between 0 and 23.");
             }
+            break;
+        case 3:
+            let scenarioName = input;
+            newScenarioData.name = scenarioName;
+            newIndirectMessage("You will receive a system message when the scenario, " + scenarioName + ", begins.");
+            scenarioList.push(newScenarioData);
+            console.log(scenarioList);
+            resetInput();
             break;
     }
     newIndirectMessage(questions[newScenarioQuestionnum]);
