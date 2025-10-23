@@ -76,7 +76,7 @@ function sendCommand() {
         }
         newIndirectMessage("The Library of Knowledge has been closed.");
     } else if(speechState == "setNewScenario") {
-        handleScenarioInformation(commandInput.value);
+        handleScenarioCreation(commandInput.value);
     }
     commandInput.value = "";
 }
