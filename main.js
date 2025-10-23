@@ -88,6 +88,7 @@ function handleScenarioCreation(input) {
             if(!newScenarioData.month) {
                 newScenarioData.month = wordsToNumbers(input);
             }
+            if(newScenarioData.month >= 0 && newScenarioData.month <= 12
             newScenarioQuestionnum += 1;
             break;
         case 1:
@@ -95,7 +96,7 @@ function handleScenarioCreation(input) {
             if(!dayNum) { // This means that it returned null, it's probably a word number
                 dayNum = wordsToNumbers(input);
             }
-            if(input >= 1 && input <= 31) {
+            if(dayNum >= 1 && dayNum <= 31) {
                 newScenarioData.day = dayNum;
                 newScenarioQuestionnum += 1;
             } else {
@@ -107,7 +108,7 @@ function handleScenarioCreation(input) {
             if(!hourNum) {
                 hourNum = wordsToNumbers(input);
             }
-            if(input >= 0 && input <= 23) {
+            if(hourNum >= 0 && hourNum <= 23) {
                 newScenarioData.hour = hourNum;
                 newScenarioQuestionnum += 1;
             } else {
