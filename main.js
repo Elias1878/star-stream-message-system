@@ -144,7 +144,7 @@ function handleScenarioCreation(input) {
             break;
         case 3:
             let scenarioName = input;
-            newScenarioData.name = scenarioName;
+            newScenarioData.scenarioName = scenarioName;
             newIndirectMessage("You will receive a system message when the scenario, " + scenarioName + ", begins.");
             scenarioList.push(newScenarioData);
             console.log(scenarioList);
