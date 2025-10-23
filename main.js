@@ -85,10 +85,16 @@ function handleScenarioCreation(input) {
     switch(newScenarioQuestionnum) {
         case 0:
             newScenarioData.month = parseInt(input);
+            if(!newScenarioData.month) {
+                newScenarioData.month = wordsToNumbers(input);
+            }
             newScenarioQuestionnum += 1;
             break;
         case 1:
             let dayNum = parseInt(input);
+            if(!dayNum) { // This means that it returned null, it's probably a word number
+                dayNum = wordsToNumbers(input);
+            }
             if(input >= 1 && input <= 31) {
                 newScenarioData.day = dayNum;
                 newScenarioQuestionnum += 1;
@@ -98,6 +104,9 @@ function handleScenarioCreation(input) {
             break;
         case 2:
             let hourNum = parseInt(input);
+            if(!hourNum) {
+                hourNum = wordsToNumbers(input);
+            }
             if(input >= 0 && input <= 23) {
                 newScenarioData.hour = hourNum;
                 newScenarioQuestionnum += 1;
