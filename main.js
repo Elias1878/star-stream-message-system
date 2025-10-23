@@ -5,7 +5,7 @@ function textToNumbers(text) {
     let numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty one", "twenty two", "twenty three", "twenty four", "twenty five", "twenty six", "twenty seven", "twenty eight", "twenty nine", "thirty", "thirty one", "thirty two"];
     let knownNumbers = [];
     for(let i = 0; i < numbers.length; i++) {
-        if(text.includes(numbers[i]) {
+        if(text.includes(numbers[i])) {
             knownNumbers.push(i);
         }
     }
