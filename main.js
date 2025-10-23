@@ -1,6 +1,12 @@
 const immediateMessageCenter = document.querySelector(".Immediate-Notifications"); // Immediate messages div.
 const commandInput = document.getElementById("command");
 
+function textToNumber(text) {
+    if(text.contains("one")) {
+        
+    }
+}
+
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
 let speechState = "wakeword";
