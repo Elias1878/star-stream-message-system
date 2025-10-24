@@ -2,7 +2,7 @@ const immediateMessageCenter = document.querySelector(".Immediate-Notifications"
 const commandInput = document.getElementById("command");
 
 function textToNumbers(text) {
-    let numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty one", "twenty two", "twenty three", "twenty four", "twenty five", "twenty six", "twenty seven", "twenty eight", "twenty nine", "thirty", "thirty one", "thirty two"];
+    let numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty one", "twenty two", "twenty three", "twenty four", "twenty five", "twenty six", "twenty seven", "twenty eight", "twenty nine", "thirty", "thirty one", "thirty two", "thirty three", "thirty four", "thirty five", "thirty six", "thirty seven", "thirty eight", "thirty nine", "fourty"];
     let knownNumbers = [];
     for(let i = 0; i < numbers.length; i++) {
         if(text.includes(numbers[i])) {
@@ -15,9 +15,10 @@ function textToNumbers(text) {
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = new SpeechRecognition();
+const SPEECH_PAUSE = 400;
 let speechState = "wakeword";
 
-let libraryOfKnowledge = [];
+let libraryOfKnowledge = [{name: " bird", def: " a flying organism"}];
 let newKnowledge = {
     name: null,
     def: null
@@ -69,6 +70,7 @@ function beginSpeechRecognition() {
 recognition.onresult = (e) => {
     const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
     console.log("Heard: " + transcript);
+    console.log("Trimmed: " + transcript.trim());
     console.log(e.results);
 
     if(speechState == "wakeword") {
@@ -82,23 +84,33 @@ recognition.onresult = (e) => {
         handleScenarioCreation(transcript);
     } else if(speechState == "addtolibrary") {
         libraryAddHandler(transcript);
+    } else if(speechState == "openalibraryitem") {
+        libraryOpenHandler(transcript);
     }
 };
+
+function libraryOpenHandler(transcript) {
+    let input = transcript.trim();
+    console.log(libraryOfKnowledge);
+    let item = null;
+    for(let i = 0; i < libraryOfKnowledge.length; i++) {
+        if(input.includes(libraryOfKnowledge[i].name.trim())) {
+            item = i; // Index
+        }
+    }
+    if(item !== null) {
+        newIndirectMessage(libraryOfKnowledge[item].name + ". " + libraryOfKnowledge[item].def);
+    } else {
+        newIndirectMessage("This item does not exist in the Library of Knowledge");
+    }
+    speechState = "wakeword";
+}
 
 function sendCommand() {
     if(speechState == "wakeword") {
         processAndAnswer(commandInput.value);
     } else if(speechState == "addtolibrary") {
         libraryAddHandler(commandInput.value);
-    } else if(speechState == "openalibraryitem") {
-        for(let i = 0; i < libraryOfKnowledge.length; i++) {
-            if(commandInput.value.includes(libraryOfKnowledge[i].name.toLowerCase())) {
-                newIndirectMessage(libraryOfKnowledge[i].name + ": " + libraryOfKnowledge[i].def);
-                speechState = "wakeword";
-                break;
-            }
-        }
-        newIndirectMessage("The Library of Knowledge has been closed.");
     } else if(speechState == "setNewScenario") {
         handleScenarioCreation(commandInput.value);
     }
@@ -114,7 +126,7 @@ function handleScenarioCreation(input) {
             if(!newScenarioData.month) {
                 newScenarioData.month = textToNumbers(input);
             }
-            if(newScenarioData.month >= 0 && newScenarioData.month <= 12) {
+            if(newScenarioData.month >= 0 && newScenarioData.month < 12) {
                 newScenarioQuestionnum += 1;
             }
             break;
@@ -150,7 +162,6 @@ function handleScenarioCreation(input) {
             console.log(scenarioList);
             resetInput();
             return;
-            break;
     }
     newIndirectMessage(questions[newScenarioQuestionnum]);
     console.log(newScenarioData);
@@ -171,7 +182,8 @@ function libraryAddHandler(input) {
     newIndirectMessage(questions[newKnowledgeQuestion]);
 }
 
-function processAndAnswer(command) {
+function processAndAnswer(input) {
+    let command = input.trim();
     if(command.includes("give me") && command.includes("scenario information")) {
         newIndirectMessage("The time is currently " + getDirectTime("time") + ". It is a " + getDirectTime("day"));
     } else if(command.includes("give me") && command.includes("date")) {
@@ -194,8 +206,9 @@ function processAndAnswer(command) {
             for(let i = 0; i < libraryOfKnowledge.length; i++) {
                 items = items + (i + 1) + ": " + libraryOfKnowledge[i].name + ", ";
             }
-            newIndirectMessage("You have opened the Library of Knowledge." + items);
+            newIndirectMessage("You have opened the Library of Knowledge. " + items);
             speechState = "openalibraryitem";
+            return;
         } else {
             newIndirectMessage("The Library of Knowledge is empty.");
         }
@@ -218,16 +231,47 @@ function speakMessage(msg) {
     } else {
         console.log("Voice allowed");
     }
-    let spoken = new SpeechSynthesisUtterance(msg);
-    spoken.rate = 1;
-    spoken.pitch = 1.1;
-    spoken.volume = 1;
-    window.speechSynthesis.speak(spoken);
+
+    let splitMessage = msg.split(/(?<=[.!?])\s+/)
+
+    console.log(splitMessage);
+
+    let i = 0;
+
+    function next() {
+        if(i >= splitMessage.length) return; // Stop if the entire thing has been said
+
+        let spoken = new SpeechSynthesisUtterance(splitMessage[i]);
+        spoken.rate = 0.9;
+        spoken.pitch = 1;
+        spoken.volume = 1;
+        window.speechSynthesis.speak(spoken);
+
+        spoken.onend = () => {
+            i++;
+            setTimeout(next, SPEECH_PAUSE);
+        };
+    }
+
+    next();
 }
 
 function senseTime() {
     timeSensing.worldNow = new Date();
     timeSensing.currentHour = timeSensing.worldNow.getHours();
+
+    // Getting upcoming scenario information
+    for(let i = 0; i < scenarioList.length; i++) {
+        let scen = scenarioList[i];
+        if(scen.month == timeSensing.worldNow.getMonth()) {
+            if(scen.day == timeSensing.worldNow.getDate()) {
+                // The scenario is happening today
+                if(timeSensing.currentHour < scen.hour && scen.hour - timeSensing.currentHour < 2) {
+                    newScenarioMessage("reminder", scen.scenarioName, new Date(timeSensing.worldNow.getFullYear(), scen.month, scen.day, scen.hour, 0));
+                }
+            }
+        }
+    }
 
     if(timeSensing.currentHour !== timeSensing.lastHour) {
         // Send a message to tell what time it is
@@ -250,7 +294,6 @@ function getDirectTime(req) {
     if(req == "time") return(`${timeSensing.currentHour}:${minutes}`);
     if(req == "day") return days[timeSensing.worldNow.getDay()];
     if(req == "month") return months[timeSensing.worldNow.getMonth()];
-    if(req == "numberday") return timeSensing.worldNow.getDate();
 }
 
 function newIndirectMessage(msg) {
@@ -260,5 +303,31 @@ function newIndirectMessage(msg) {
     speakMessage(msg);
 }
 
+function newScenarioMessage(mode, title, timeodate) {
+    let message = document.createElement("div");
+    message.style.border = "2px solid white";
+    message.id = "scenario-message";
+    if(mode == "reminder") {
+        // Getting the time between now and the wanted time.
+        let timeDifference = timeodate.getTime() - timeSensing.worldNow.getTime();
+        // Time difference is in milliseconds, so we have to convert it.
+        let hours = Math.floor(timeDifference / (1000 * 60 * 60));
+        let minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+        // Creating the scenario box
+        let scenhead = document.createElement("h2");
+        scenhead.innerHTML = "Upcoming Scenario - " + title;
+        let scentimer = document.createElement("div");
+        scentimer.innerHTML = "Begins in " + hours + ":" + minutes;
+        let scenduration = document.createElement("div");
+        scenduration.innerHTML = "Duration - 1 hour";
+        message.appendChild(scenhead);
+        message.appendChild(scenduration);
+        message.appendChild(scentimer);
+        // Speak though voice synthesis
+        speakMessage("Upcoming Scenario: " + title + " begins in " + hours + " hours and " + minutes + " minutes");
+    }
+    immediateMessageCenter.prepend(message);
+}
+
 newIndirectMessage("bibitybobityboo");
-setInterval(senseTime, 300000); // Check time every 5 minutes.
+setInterval(senseTime, 60000); // Check time every 5 minutes.
