@@ -8,14 +8,16 @@ class User {
             long: null
         }
         this.name = null;
+        this.timesTried = 0;
     }
     
     getPosition(pos) {
         this.position.lat = pos.coords.latitude;
         this.position.long = pos.coords.longitude;
+        this.timesTried += 1;
         
         // If it's not accurate enough:
-        if(pos.coords.accuracy > 200) {
+        if(pos.coords.accuracy > 200 && this.timesTried < 3) {
             setTimeout(() => locationHandlerSystem(true), 5000); // It'll try again in 5 seconds with better accuracy.
         }
     }
@@ -244,7 +246,7 @@ function processAndAnswer(input) {
         newIndirectMessage("What is the name of the thing you wish to add?");
         return;
     } else if(command.includes("tell me") && command.includes("my") && command.includes("position")) {
-        newIndirectMessage("Your current position. Latitude: " + mainUser.position.lat + ", Longitude: " + mainUser.position.long));
+        newIndirectMessage("Your current position. Latitude: " + mainUser.position.lat + ", Longitude: " + mainUser.position.long);
     }
     speechState = "wakeword";
 }
@@ -321,7 +323,7 @@ function getDirectTime(req) {
 }
 
 function locationHandlerSystem(enablehighaccuracy = false) {
-    navigator.geolocation.getCurrentPosition(mainUser.getPosition, (err) => {
+    navigator.geolocation.getCurrentPosition(mainUser.getPosition.bind(mainUser), (err) => {
         console.log("Error, couldn't see position: " + err);
     }, {enableHighAccuracy: enablehighaccuracy, maximumAge: 60000, timeout: 10000});
 }
