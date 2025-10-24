@@ -1,6 +1,28 @@
 const immediateMessageCenter = document.querySelector(".Immediate-Notifications"); // Immediate messages div.
 const commandInput = document.getElementById("command");
 
+class User {
+    constructor() {
+        this.position = {
+            lat: null,
+            long: null
+        }
+        this.name = null;
+    }
+    
+    getPosition(pos) {
+        this.position.lat = pos.coords.latitude;
+        this.position.long = pos.coords.longitude;
+        
+        // If it's not accurate enough:
+        if(pos.coords.accuracy > 200) {
+            setTimeout(() => locationHandlerSystem(true), 5000); // It'll try again in 5 seconds with better accuracy.
+        }
+    }
+}
+
+let mainUser = new User();
+
 function textToNumbers(text) {
     let numbers = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty one", "twenty two", "twenty three", "twenty four", "twenty five", "twenty six", "twenty seven", "twenty eight", "twenty nine", "thirty", "thirty one", "thirty two", "thirty three", "thirty four", "thirty five", "thirty six", "thirty seven", "thirty eight", "thirty nine", "fourty"];
     let knownNumbers = [];
@@ -221,6 +243,8 @@ function processAndAnswer(input) {
         }
         newIndirectMessage("What is the name of the thing you wish to add?");
         return;
+    } else if(command.includes("tell me") && command.includes("my") && command.includes("position")) {
+        newIndirectMessage("Your current position. Latitude: " + mainUser.position.lat + ", Longitude: " + mainUser.position.long));
     }
     speechState = "wakeword";
 }
@@ -296,6 +320,12 @@ function getDirectTime(req) {
     if(req == "month") return months[timeSensing.worldNow.getMonth()];
 }
 
+function locationHandlerSystem(enablehighaccuracy = false) {
+    navigator.geolocation.getCurrentPosition(mainUser.getPosition, (err) => {
+        console.log("Error, couldn't see position: " + err);
+    }, {enableHighAccuracy: enablehighaccuracy, maximumAge: 60000, timeout: 10000});
+}
+
 function newIndirectMessage(msg) {
     let message = document.createElement("div");
     message.innerHTML = msg;
@@ -330,4 +360,5 @@ function newScenarioMessage(mode, title, timeodate) {
 }
 
 newIndirectMessage("bibitybobityboo");
-setInterval(senseTime, 60000); // Check time every 5 minutes.
+setInterval(senseTime, 60000); // Check time every minute.
+setInterval(locationHandlerSystem, 180000); // Check location every three minutes.
