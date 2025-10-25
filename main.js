@@ -7,8 +7,62 @@ class User {
             lat: null,
             long: null
         }
+        this.loggedAreas = [];
+        this.areaLogQuestion = 0;
+        this.newAreaParams = {
+            name: null,
+            position: {
+                lat: null,
+                long: null
+            },
+            radius: null
+        };
+        this.newAreaQuestions = ["What is the name of this place?", "What is the radius, in meters?"];
+        this.retry = false;
+
         this.name = null;
         this.timesTried = 0;
+    }
+
+    resetNewArea() {
+        this.retry = false;
+        this.areaLogQuestion = 0;
+        this.newAreaParams = {
+            name: null,
+            position: {
+                lat: null,
+                long: null
+            },
+            radius: null
+        };
+    }
+
+    newAreaHandler(input) {
+        console.log("input");
+        if(this.areaLogQuestion == 0) {
+            this.newAreaParams.name = input;
+        } else {
+            this.newAreaParams.radius = parseInt(input);
+            if(!this.newAreaParams.radius || this.newAreaParams.radius == 0) {
+                this.newAreaParams.radius = textToNumbers(input);
+            }
+        }
+        this.areaLogQuestion += 1;
+        if(this.areaLogQuestion > 1) {
+            if((!this.position.lat || !this.position.long) && !this.retry) {
+                newIndirectMessage("Error when creating a new area: Your position wasn't found. I recommend waiting around 3 minutes before trying again.");
+                resetInput();
+                return;
+            } else {
+                this.newAreaParams.position.lat = this.position.lat;
+                this.newAreaParams.position.long = this.position.long;
+            }
+            resetInput();
+            newIndirectMessage("The new area, " + this.newAreaParams.name + ", has been logged.");
+            this.createNewArea(this.newAreaParams.name, this.newAreaParams.position, this.newAreaParams.radius);
+            return;
+        }
+        newIndirectMessage(this.newAreaQuestions[this.areaLogQuestion]);
     }
     
     getPosition(pos) {
@@ -20,6 +74,14 @@ class User {
         if(pos.coords.accuracy > 200 && this.timesTried < 3) {
             setTimeout(() => locationHandlerSystem(true), 5000); // It'll try again in 5 seconds with better accuracy.
         }
+    }
+
+    createNewArea(name, pos, radius) {
+        this.loggedAreas.push({
+            name: name,
+            position: pos,
+            radius: radius
+        });
     }
 }
 
@@ -41,6 +103,10 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 const recognition = new SpeechRecognition();
 const SPEECH_PAUSE = 400;
 let speechState = "wakeword";
+
+recognition.onend = () => {
+    recognition.start();
+}
 
 let libraryOfKnowledge = [{name: " bird", def: " a flying organism"}];
 let newKnowledge = {
@@ -97,6 +163,11 @@ recognition.onresult = (e) => {
     console.log("Trimmed: " + transcript.trim());
     console.log(e.results);
 
+    if(transcript.includes("star stream") && transcript.includes("be silent")) {
+        window.speechSynthesis.cancel();
+        return;
+    }
+
     if(speechState == "wakeword") {
         if(transcript.includes("star stream") || transcript.includes("starstream")) {
             speakMessage("The Star Stream awaits your request.");
@@ -110,7 +181,14 @@ recognition.onresult = (e) => {
         libraryAddHandler(transcript);
     } else if(speechState == "openalibraryitem") {
         libraryOpenHandler(transcript);
-    }
+    } else if(speechState == "createnewarea") {
+        console.log("new area being created");
+        mainUser.newAreaHandler(transcript);
+    } else if(speechState == "deleteanarea") {
+        deleteAreaHandler(transcript);
+    } else if(speechState == "deletelokitem") {
+        deleteItemFromLibraryHandler(transcript);
+    } 
 };
 
 function libraryOpenHandler(transcript) {
@@ -137,6 +215,13 @@ function sendCommand() {
         libraryAddHandler(commandInput.value);
     } else if(speechState == "setNewScenario") {
         handleScenarioCreation(commandInput.value);
+    } else if(speechState == "addtolibrary") {
+        libraryAddHandler(commandInput.value);
+    } else if(speechState == "openalibraryitem") {
+        libraryOpenHandler(commandInput.value);
+    } else if(speechState == "createnewarea") {
+        console.log("new area being created");
+        mainUser.newAreaHandler(commandInput.value);
     }
     commandInput.value = "";
 }
@@ -191,6 +276,27 @@ function handleScenarioCreation(input) {
     console.log(newScenarioData);
 }
 
+function getDistanceToPoint(lat1, lat2, lon1, lon2) {
+    // Convert from degrees to radians
+    let la1 = lat1 * Math.PI / 180;
+    let la2 = lat2 * Math.PI / 180;
+
+    // Calculate differences in radians
+    let dla = (lat2 - lat1) * Math.PI / 180;
+    let dlo = (lon2 - lon1) * Math.PI / 180;
+
+    // Haversine formula.
+    let a = Math.sin(dla / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dlo / 2) ** 2;
+
+    // Convert a into the central angle
+    let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    // Earth's radius
+    let r = 6371e3;
+
+    let distance = r * c;
+    return distance;
+}
+
 function libraryAddHandler(input) {
     let questions = ["What is the name of the thing you wish to add?", "Define it."];
     if(newKnowledgeQuestion == 0) {
@@ -236,7 +342,7 @@ function processAndAnswer(input) {
         } else {
             newIndirectMessage("The Library of Knowledge is empty.");
         }
-    } else if(command.includes("add to") && command.includes("library of knowledge")) {
+    } else if(command.includes("add") && command.includes("to") && command.includes("library of knowledge")) {
         speechState = "addtolibrary";
         newKnowledgeQuestion = 0;
         newKnowledge = {
@@ -247,8 +353,154 @@ function processAndAnswer(input) {
         return;
     } else if(command.includes("tell me") && command.includes("my") && command.includes("position")) {
         newIndirectMessage("Your current position. Latitude: " + mainUser.position.lat + ", Longitude: " + mainUser.position.long);
+    } else if(command.includes("log") && command.includes("new") && command.includes("area")) {
+        mainUser.resetNewArea();
+        newIndirectMessage("You are logging a new area. " + mainUser.newAreaQuestions[mainUser.areaLogQuestion]);
+        speechState = "createnewarea";
+        return;
+    } else if((command.includes("tell me") || command.includes("what is")) && (command.includes("distance") || command.includes("far")) && command.includes("from")) {
+        // Possibly asking their distance from a place.
+        locationHandlerSystem(true);
+        setTimeout(() => { getDistanceFromAreas(command)}, 1500);
+    } else if(command.includes("open") && command.includes("area list")) {
+        let arealen = mainUser.loggedAreas.length;
+        // Getting every single area and name
+        let arealist = "";
+        for(let i = 0; i < arealen; i++) {
+            arealist = arealist + (i + 1) + ": " + mainUser.loggedAreas[i].name + ". ";
+        }
+
+        if(arealen > 0) {
+            newIndirectMessage("You have " + arealen + " areas. Here is the list in its entirety: " + arealist);
+        } else {
+            newIndirectMessage("You have " + arealen + " areas.");
+        }
+    } else if(command.includes("delete")) {
+        if(command.includes("area")) {
+            speechState = "deleteanarea";
+            newIndirectMessage("Which area do you want to delete? If you don't know, open the area list to find the name.");
+            return;
+        } else if((command.includes("item") || command.includes("something")) && command.includes("library of knowledge")) {
+            speechState = "deletelokitem";
+            newIndirectMessage("Which item do you want to delete? If you don't know, open the Library Of Knowledge to find the name.");
+            return;
+        } else if(command.includes("scenario")) {
+            // We're gonna try doing something simpler for this one. So that word choice doesn't have to matter completely
+            if(command.match(/\bcancel\b/)) {
+                resetInput();
+            } else {
+                let targetscen = null;
+                let targetindex = null;
+                for(let i = 0; i < scenarioList.length; i++) {
+                    let currentScen = scenarioList[i];
+                    let currentScenName = (currentScen.scenarioName.trim()).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+                    let itemRegex = new RegExp(`\\b${currentScenName}\\b`, "i");
+
+                    if(command.match(itemRegex)) {
+                        targetscen = currentScen;
+                        targetindex = i;
+                        break;
+                    }
+                }
+
+                if(targetscen) {
+                    console.log(targetscen);
+                    newIndirectMessage("The item, " + targetscen.name + ", has been deleted from the Scenario List.");
+                    scenarioList.splice(targetindex, 1);
+                    resetInput();
+                }
+            }
+        }
     }
     speechState = "wakeword";
+}
+
+function deleteItemFromLibraryHandler(input) {
+    if(input.match(/\bcancel\b/)) {
+        resetInput();
+    } else {
+        let targetitem = null;
+        let targetindex = null;
+        for(let i = 0; i < libraryOfKnowledge.length; i++) {
+            let currentItem = libraryOfKnowledge[i];
+            let currentItemName = (currentItem.name.trim()).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+            let itemRegex = new RegExp(`\\b${currentItemName}\\b`, "i");
+
+            if(input.match(itemRegex)) {
+                targetitem = currentItem;
+                targetindex = i;
+                break;
+            }
+        }
+
+        if(targetitem) {
+            libraryOfKnowledge.splice(targetindex, 1);
+            newIndirectMessage("The item, " + targetitem.name + ", has been deleted from the Library of Knowledge.");
+            resetInput();
+        }
+    }
+}
+
+function deleteAreaHandler(input) {
+    if(input.includes("cancel")) {
+        resetInput();
+    } else {
+        let targetArea = null;
+        let targetindex = null;
+        for(let i = 0; i < mainUser.loggedAreas.length; i++) {
+            let currentArea = mainUser.loggedAreas[i];
+            let currentAreaName = currentArea.name.trim();
+            currentAreaName = currentAreaName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+            let areaRegex = new RegExp(`\\b${currentAreaName}\\b`, "i");
+
+            if(input.match(areaRegex)) {
+                targetArea = {
+                    name: currentArea.name,
+                    position: currentArea.position,
+                    radius: currentArea.radius
+                }
+                targetindex = i;
+                break;
+            }
+        }
+        if(targetArea) {
+            mainUser.loggedAreas.splice(targetindex, 1);
+            newIndirectMessage("The area, " + targetArea.name + ", has been deleted.");
+        } else {
+            newIndirectMessage("Couldn't find that area.");
+        }
+        resetInput();
+    }
+}
+
+function getDistanceFromAreas(input) {
+    let targetArea = null;
+    for(let i = 0; i < mainUser.loggedAreas.length; i++) {
+        let currentArea = mainUser.loggedAreas[i];
+        let currentAreaName = currentArea.name.trim();
+        currentAreaName = currentAreaName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        let areaRegex = new RegExp(`\\b${currentAreaName}\\b`, "i");
+
+        if(input.match(areaRegex)) {
+            targetArea = {
+                name: currentArea.name,
+                position: currentArea.position,
+                radius: currentArea.radius
+            }
+            break;
+        }
+    }
+    if(targetArea) {
+        // Get the distance.
+        let dist = Math.round(getDistanceToPoint(mainUser.position.lat, targetArea.position.lat, mainUser.position.long, targetArea.position.long));
+        newIndirectMessage("You are " + dist + " meters away from " + targetArea.name);
+    } else {
+        newIndirectMessage("There is no area with that name.");
+    }
 }
 
 function speakMessage(msg) {
@@ -324,7 +576,7 @@ function getDirectTime(req) {
 
 function locationHandlerSystem(enablehighaccuracy = false) {
     navigator.geolocation.getCurrentPosition(mainUser.getPosition.bind(mainUser), (err) => {
-        console.log("Error, couldn't see position: " + err);
+        console.log("Error, couldn't see position: " + err.code);
     }, {enableHighAccuracy: enablehighaccuracy, maximumAge: 60000, timeout: 10000});
 }
 
@@ -363,4 +615,5 @@ function newScenarioMessage(mode, title, timeodate) {
 
 newIndirectMessage("bibitybobityboo");
 setInterval(senseTime, 60000); // Check time every minute.
-setInterval(locationHandlerSystem, 180000); // Check location every three minutes.
+setInterval(locationHandlerSystem, 30000); // Check location every three minutes. May be changed for testing sometimes.
+locationHandlerSystem(true);
