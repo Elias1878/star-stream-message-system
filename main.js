@@ -12,6 +12,21 @@ class LibraryOfKnowledge {
     }
 }
 
+class AreaList {
+    constructor() {
+        this.list = [];
+        this.newAreaQuestion = 0;
+        this.newArea = {
+            name: null,
+            position: {
+                lat: null,
+                long: null
+            },
+            radius: null
+        }
+    }
+}
+
 class User {
     constructor() {
         this.position = {
