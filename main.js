@@ -1,6 +1,17 @@
 const immediateMessageCenter = document.querySelector(".Immediate-Notifications"); // Immediate messages div.
 const commandInput = document.getElementById("command");
 
+class LibraryOfKnowledge {
+    constructor() {
+        this.list = [];
+        this.lokQuestion = 0;
+        this.newKnowledge = {
+            name: null,
+            def: null
+        }
+    }
+}
+
 class User {
     constructor() {
         this.position = {
